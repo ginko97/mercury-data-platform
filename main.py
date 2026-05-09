@@ -1,25 +1,28 @@
 import structlog
-import os
+import psycopg2
 
-# Configure Production-Grade Logging
-structlog.configure(
-    processors=[
-        structlog.processors.TimeStamper(fmt="iso"),
-        structlog.processors.JSONRenderer() 
-    ]
-)
-logger = structlog.get_logger()
+# Global Configuration
+CONNECTION_PARAMS = {
+    "host": "localhost",
+    "port": 5434, # Mapped in docker-compose
+    "database": "banking_db",
+    "user": "ginko",
+    "password": "password123"
+}
+
+log = structlog.get_logger()
+
+def test_db_connection():
+    try:
+        # Unpacking the global dict
+        conn = psycopg2.connect(**CONNECTION_PARAMS) 
+        log.info("database_connection_success", status="handshake_complete")
+        conn.close()
+    except Exception as e:
+        log.error("database_connection_failed", error=str(e))
 
 def main():
-    # Use the port from your docker-compose.yml
-    db_port = os.getenv("DB_PORT", "5434")
-    
-    logger.info("platform_startup", 
-                version="0.1.0", 
-                db_port=db_port,
-                env="local")
-    
-    print("Hello from mercury-data-platform!")
+    test_db_connection()
 
 if __name__ == "__main__":
     main()
