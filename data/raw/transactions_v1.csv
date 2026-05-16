@@ -1,0 +1,4 @@
+transaction_id,account_id,amount,currency,transaction_date,merchant,payload
+TXN-2026-004,ACC-4412,45.00,USD,2026-05-16T14:32:00Z,Walmart Supercenter,"{""category"": ""groceries""}"
+TXN-2026-005,ACC-8821,899.99,USD,2026-05-16T15:11:22Z,Apple Store,"{""category"": ""electronics"", ""device"": ""iphone_17""}"
+TXN-2026-006,ACC-3345,6.50,USD,2026-05-16T16:00:05Z,Subway Sandwiches,"{""category"": ""food_beverage""}"
