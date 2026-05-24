@@ -19,3 +19,12 @@ logs/
 airflow.cfg
 airflow-webserver.pid
 standalone_admin_password.txt
+*.db          # Ignores local SQLite metadata databases if Airflow falls back to them
+*.pid         # Catches any background scheduler or worker process tracking files
+webserver_config.py  # ONLY ignore this if you want to use standard default UI rules
+
+# ==============================================================================
+# IDE & Local Workspace Configurations
+# ==============================================================================
+.vscode/
+*.code-workspace
