@@ -13,8 +13,9 @@ log = structlog.get_logger()
 def main():
     log.info("starting_file_ingestion_pipeline", environment="local")
     
-    # Define our raw source target file path
-    csv_target = os.path.join("data", "raw", "transactions_v1.csv")
+    # FIX: Dynamically anchor the path using an environment variable prefix if present
+    platform_home = os.getenv("PLATFORM_HOME", "")
+    csv_target = os.path.join(platform_home, "data", "raw", "transactions_v1.csv")
     
     # Initialize the ingestor engine
     ingestor = PostgresIngestor()

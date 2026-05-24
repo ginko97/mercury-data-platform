@@ -11,3 +11,11 @@ wheels/
 .vscode
 .env
 .code-workspace
+
+# ==============================================================================
+# Apache Airflow Runtime & Pipeline Logs
+# ==============================================================================
+logs/
+airflow.cfg
+airflow-webserver.pid
+standalone_admin_password.txt

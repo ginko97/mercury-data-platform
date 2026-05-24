@@ -1,17 +1,55 @@
-services:
+version: '3.8'
+
+services:  # <-- This must be at the very top, with ZERO spaces before it.
+
+  # 1. Our Core Database Layer (2 spaces indentation)
   postgres:
     image: postgres:15
+    container_name: mercury-postgres
+    restart: always
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASS}
       POSTGRES_DB: ${DB_NAME}
     ports:
       - "${DB_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
-  # Our Orchestrator 
-  airflow:
+  # 2. Airflow Webserver (2 spaces indentation)
+  airflow-webserver:
     image: apache/airflow:2.7.1
+    container_name: mercury-airflow-webserver
+    restart: always
+    command: webserver
+    ports:
+      - "8081:8080"
     environment:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${DB_USER}:${DB_PASS}@postgres_airflow:5432/${DB_NAME}
-    # ... more config simplified for brevity ...
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${DB_USER}:${DB_PASS}@postgres:5432/${DB_NAME}
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - _AIRFLOW_WWW_USER_USERNAME=${DB_USER}
+      - _AIRFLOW_WWW_USER_PASSWORD=${DB_PASS}
+    volumes:
+      - .:/opt/airflow
+    depends_on:
+      - postgres
+
+  # 3. Airflow Scheduler (2 spaces indentation)
+  airflow-scheduler:
+    image: apache/airflow:2.7.1
+    container_name: mercury-airflow-scheduler
+    restart: always
+    command: scheduler
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${DB_USER}:${DB_PASS}@postgres:5432/${DB_NAME}
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+    volumes:
+      - .:/opt/airflow
+    depends_on:
+      - postgres
+
+# This is a top-level block (ZERO spaces before it)
+volumes:
+  postgres_data:
