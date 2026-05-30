@@ -22,8 +22,8 @@ with DAG(
     tags=['mercury', 'silver', 'transformation'],
 ) as dag:
 
-    # Task 1: Execute our unified pipeline entrypoint focusing on the Silver phase
-    # We pass the required library installations inline just like our Bronze setup
+    # Task: Execute our unified pipeline entrypoint focusing on the Silver phase
+    # We install required library wrappers right before calling the execution main module
     run_silver_transformation = BashOperator(
         task_id='execute_silver_transformation',
         bash_command='pip install structlog python-dotenv psycopg2-binary && python main.py',
