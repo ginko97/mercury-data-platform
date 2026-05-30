@@ -1,78 +1,224 @@
-# Mercury Data Platform
+# Mercury Data Platform 
 
-A production-grade data engineering platform for banking transaction ingestion, built with Python 3.13, Docker, and Airflow.
+A data engineering project that implements a Medallion Architecture (Bronze → Silver) pipeline for banking transaction data using Apache Airflow, PostgreSQL, Docker, and Python.
 
-## ## 1. Prerequisites
-* **Python**: 3.13+
-* **Package Manager**: [uv](https://docs.astral.sh/uv/)
-* **Containerization**: Docker and Docker Compose
+The platform ingests raw transaction files, stores them in a Bronze layer, applies cleaning and transformation logic, and produces analytics-ready datasets in a Silver layer.
 
-## ## 2. Setup
+---
 
-### Step 1: Environment Configuration
-Create a `.env` file in the root directory and add the following (matching your `.gitignore` rules):
-```env
-DB_HOST=localhost
-DB_PORT=5434
-DB_NAME=banking_db
-DB_USER=your_user
-DB_PASS=your_password
-```
+## Project Goals
 
-## Data Platform Architecture
+This project demonstrates:
 
-The following diagram illustrates our automated multi-service batch ingestion architecture running across container and host filesystem boundaries:
+* Data ingestion pipelines
+* Apache Airflow orchestration
+* PostgreSQL data warehousing
+* Medallion Architecture design
+* Dockerized data platforms
+* ETL / ELT workflows
+* Data transformation and validation
+
+---
+
+## Architecture
+
+### Data Flow
+
+1. Raw transaction files are placed in `data/raw/`
+2. Airflow triggers the Bronze ingestion pipeline
+3. Raw records are loaded into PostgreSQL Bronze tables
+4. Transformation jobs clean and normalize records
+5. Processed records are stored in Silver tables
+6. Clean data becomes available for analytics and reporting
+
+### System Architecture
 
 ```mermaid
 graph TD
-    subgraph Host_Machine [Host System]
-        Local_CSV[data/raw/transactions_v1.csv]
-        Local_Env[.env Configuration]
-    end
+    A[Raw Transaction Files] --> B[Bronze Ingestion DAG]
+    B --> C[(Bronze Tables)]
 
-    subgraph Docker_Compose_Network [Docker Bridge Network]
-        subgraph Airflow_Services [Orchestration Layer]
-            Scheduler[mercury-airflow-scheduler]
-            Webserver[mercury-airflow-webserver]
-        end
+    C --> D[Silver Transformation DAG]
+    D --> E[(Silver Tables)]
 
-        subgraph Core_Execution [Pipeline Runtime Context]
-            DAG_Workflow[mercury_bronze_ingestion DAG]
-            Main_Script[main.py Entrypoint]
-            File_Ingestor[ingestors/file_ingestor.py]
-            Postgres_Ingestor[ingestors/postgres_ingestor.py]
-        end
+    E --> F[Analytics & Reporting]
 
-        subgraph Database_Layer [Storage Infrastructure]
-            Metadata_DB[(Airflow Metadata)]
-            Target_DB[(PostgreSQL: banking_db)]
-            Bronze_Table[(Table: bronze_transactions)]
-        end
-    end
-
-    %% Volume Mount Linkages
-    Local_CSV -.->|Mounted Volume Link| Main_Script
-    Local_Env -.->|Injected Variables| Airflow_Services
-    Local_Env -.->|Injected Variables| Database_Layer
-
-    %% Workflow Control Loops
-    Webserver -->|UI Monitor| DAG_Workflow
-    Scheduler -->|Trigger Window| DAG_Workflow
-    DAG_Workflow -->|1. Task: Bash Check| Local_CSV
-    DAG_Workflow -->|2. Task: Run Script| Main_Script
-
-    %% Execution Dataflow
-    Main_Script -->|Invoke| File_Ingestor
-    Main_Script -->|Invoke| Postgres_Ingestor
-    File_Ingestor -->|Extract & Parse Streaming Data| Local_CSV
-    Postgres_Ingestor -->|Establish Handshake: postgres:5432| Target_DB
-    Postgres_Ingestor -->|Execute High-Throughput Batch Insert| Bronze_Table
-
-    %% Airflow Backend Connectivity
-    Airflow_Services ===|SQLAlchemy Connection| Metadata_DB
-
-    %% Styling Elements
-    style Local_CSV fill:#f9f,stroke:#333,stroke-width:2px
-    style DAG_Workflow fill:#bbf,stroke:#333,stroke-width:2px
-    style Bronze_Table fill:#bfb,stroke:#333,stroke-width:2px
+    G[Apache Airflow] --> B
+    G --> D
 ```
+
+---
+
+## Technology Stack
+
+| Category               | Technology              |
+| ---------------------- | ----------------------- |
+| Language               | Python 3.13             |
+| Workflow Orchestration | Apache Airflow          |
+| Database               | PostgreSQL              |
+| Containerization       | Docker & Docker Compose |
+| Dependency Management  | uv                      |
+| Logging                | structlog               |
+
+---
+
+## Repository Structure
+
+```text
+mercury-data-platform/
+├── dags/
+│   ├── bronze_ingestion_dag.py
+│   └── silver_processing_dag.py
+│
+├── ingestors/
+│   ├── file_ingestor.py
+│   └── postgres_ingestor.py
+│
+├── transformers/
+│   └── transaction_transformer.py
+│
+├── scripts/
+│   ├── init_bronze.sql
+│   └── init_silver.sql
+│
+├── data/
+│   └── raw/
+│       └── transactions_v1.csv
+│
+├── main.py
+├── docker-compose.yml
+├── pyproject.toml
+└── README.md
+```
+
+---
+
+## Example Pipeline
+
+### Input (Raw Transaction)
+
+| transaction_id | merchant  | amount |
+| -------------- | --------- | ------ |
+| TX001          | Starbucks | 12.50  |
+| TX002          | Amazon    | 120.00 |
+
+### Output (Silver Layer)
+
+| transaction_id | merchant  | amount | is_risk_flagged |
+| -------------- | --------- | ------ | --------------- |
+| TX001          | Starbucks | 12.50  | false           |
+| TX002          | Amazon    | 120.00 | false           |
+
+---
+
+## Prerequisites
+
+* Python 3.13+
+* Docker
+* Docker Compose
+* uv
+
+---
+
+## Quick Start
+
+### Clone Repository
+
+```bash
+git clone https://github.com/yourusername/mercury-data-platform.git
+cd mercury-data-platform
+```
+
+### Configure Environment
+
+Create a `.env` file:
+
+```env
+DB_HOST=postgres
+DB_PORT=5432
+DB_NAME=banking_db
+DB_USER=user
+DB_PASS=password
+PLATFORM_HOME=/opt/airflow
+```
+
+### Start Infrastructure
+
+```bash
+docker compose up -d
+```
+
+### Verify Running Containers
+
+```bash
+docker ps
+```
+
+### Access Airflow
+
+```text
+URL: http://localhost:8081
+Username: admin
+Password: admin
+```
+
+---
+
+## Running the Pipeline
+
+Execute the pipeline manually:
+
+```bash
+docker exec -it mercury-airflow-webserver python /opt/airflow/main.py
+```
+
+---
+
+## Database Verification
+
+Verify transformed records:
+
+```bash
+docker exec -it mercury-postgres \
+psql -U user -d banking_db \
+-c "SELECT * FROM silver_transactions LIMIT 10;"
+```
+
+---
+
+## Skills Demonstrated
+
+* Data Engineering
+* Apache Airflow
+* PostgreSQL
+* Docker
+* ETL / ELT Design
+* Data Modeling
+* SQL
+* Python
+* Medallion Architecture
+* Workflow Orchestration
+
+---
+
+## Project Status
+
+### Completed
+
+* [x] Bronze ingestion pipeline
+* [x] Silver transformation pipeline
+* [x] PostgreSQL integration
+* [x] Airflow orchestration
+* [x] Dockerized deployment
+
+### Planned
+
+* [ ] Gold analytics layer
+* [ ] Data quality validation
+* [ ] Great Expectations integration
+* [ ] dbt transformations
+* [ ] Kafka streaming ingestion
+* [ ] CI/CD with GitHub Actions
+* [ ] Data lineage tracking
+
+---
